@@ -1,0 +1,54 @@
+# Helpers referenced by examples/customize.yaml and consumed by the
+# automations in examples/automations/. One override + one auto-closed
+# input_boolean, and one last-auto-action input_number, per cover.
+#
+# Naming convention: input_boolean.<cover_object_id>_override,
+# input_boolean.<cover_object_id>_auto_closed,
+# input_number.<cover_object_id>_last_auto_action.
+# Stick to this convention when adding a new cover so the nightly reset
+# automation (which discovers helpers by pattern, not by a hardcoded list)
+# keeps working without changes.
+
+input_boolean:
+  living_room_cover_override:
+    name: "Living Room Cover Override"
+    icon: mdi:hand-back-right
+  living_room_cover_auto_closed:
+    name: "Living Room Cover Auto-Closed"
+    icon: mdi:weather-sunny-alert
+
+  bedroom_cover_override:
+    name: "Bedroom Cover Override"
+    icon: mdi:hand-back-right
+  bedroom_cover_auto_closed:
+    name: "Bedroom Cover Auto-Closed"
+    icon: mdi:weather-sunny-alert
+
+  office_cover_override:
+    name: "Office Cover Override"
+    icon: mdi:hand-back-right
+  office_cover_auto_closed:
+    name: "Office Cover Auto-Closed"
+    icon: mdi:weather-sunny-alert
+
+input_number:
+  living_room_cover_last_auto_action:
+    name: "Living Room Cover Last Auto Action"
+    min: 0
+    max: 9999999999
+    step: 1
+    icon: mdi:clock-outline
+
+  bedroom_cover_last_auto_action:
+    name: "Bedroom Cover Last Auto Action"
+    min: 0
+    max: 9999999999
+    step: 1
+    icon: mdi:clock-outline
+
+  office_cover_last_auto_action:
+    name: "Office Cover Last Auto Action"
+    min: 0
+    max: 9999999999
+    step: 1
+    icon: mdi:clock-outline

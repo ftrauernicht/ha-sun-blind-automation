@@ -1,0 +1,102 @@
+# Automatic Sun-Based Blind Control
+#
+# Every 10 minutes, for every cover that carries an `azimuth` attribute
+# (see examples/customize.yaml), close it to a per-cover target position if
+# the sun is currently hitting that facade and it's hot outside — unless a
+# human has already touched that cover today (its override_helper is on).
+# Reopens covers it previously auto-closed once the sun has moved off that
+# facade or it's no longer hot, except for rooms configured to never
+# auto-reopen (see `never_reopen` below).
+#
+# No cover is ever hardcoded here — `states.cover | selectattr(...)` finds
+# them all dynamically, so adding/removing a cover is purely a
+# customize.yaml + helpers.yaml change, nothing here needs editing.
+
+alias: "Automatic Sun-Based Blind Control"
+description: >-
+  Closes sun-exposed covers when it's hot, reopens them again once the sun
+  moves off that facade or it cools down, and never touches a cover a human
+  adjusted today.
+triggers:
+  - trigger: time_pattern
+    minutes: "/10"
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.outside_temperature
+    above: 24
+actions:
+  - variables:
+      # Per-cover target position (%) when auto-closing. Rooms not listed
+      # here fall back to fully closed (0). A value of 100 means "never
+      # auto-close this room at all" — used below for `never_reopen` too.
+      target_positions:
+        cover.office: 70 # partial close only — keeps some daylight for screens
+      never_reopen:
+        - cover.bedroom # closed for heat, but only ever reopened manually (sleep quality)
+      sun_facing_window_degrees: 90
+  - repeat:
+      for_each: >-
+        {{ states.cover
+           | selectattr('attributes.azimuth', 'defined')
+           | map(attribute='entity_id')
+           | list }}
+      sequence:
+        - variables:
+            cover_azimuth: "{{ state_attr(repeat.item, 'azimuth') }}"
+            sun_azimuth: "{{ state_attr('sun.sun', 'azimuth') }}"
+            # Signed angular difference, wrapped to [-180, 180], so the
+            # 0/360 compass boundary doesn't break the comparison.
+            angle_diff: >-
+              {{ ((sun_azimuth - cover_azimuth + 180) % 360) - 180 }}
+            is_sun_exposed: >-
+              {{ state_attr('sun.sun', 'elevation') | float(0) > 0
+                 and angle_diff | abs <= sun_facing_window_degrees }}
+            override_helper: "{{ state_attr(repeat.item, 'override_helper') }}"
+            auto_closed_helper: "{{ state_attr(repeat.item, 'auto_closed_helper') }}"
+            last_auto_action_helper: "{{ state_attr(repeat.item, 'last_auto_action_helper') }}"
+            target_position: "{{ target_positions.get(repeat.item, 0) }}"
+        - choose:
+            # Sun-exposed, hot, and not manually overridden today -> close it.
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ is_sun_exposed and states(override_helper) != 'on' }}
+              sequence:
+                - action: cover.set_cover_position
+                  target:
+                    entity_id: "{{ repeat.item }}"
+                  data:
+                    position: "{{ target_position }}"
+                - action: input_boolean.turn_on
+                  target:
+                    entity_id: "{{ auto_closed_helper }}"
+                - action: input_number.set_value
+                  target:
+                    entity_id: "{{ last_auto_action_helper }}"
+                  data:
+                    value: "{{ now().timestamp() }}"
+            # No longer sun-exposed, this automation was the one that closed
+            # it, not manually overridden, and not in the never-reopen list
+            # -> reopen it fully.
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ not is_sun_exposed
+                       and states(auto_closed_helper) == 'on'
+                       and states(override_helper) != 'on'
+                       and repeat.item not in never_reopen }}
+              sequence:
+                - action: cover.set_cover_position
+                  target:
+                    entity_id: "{{ repeat.item }}"
+                  data:
+                    position: 100
+                - action: input_boolean.turn_off
+                  target:
+                    entity_id: "{{ auto_closed_helper }}"
+                - action: input_number.set_value
+                  target:
+                    entity_id: "{{ last_auto_action_helper }}"
+                  data:
+                    value: "{{ now().timestamp() }}"
+mode: single

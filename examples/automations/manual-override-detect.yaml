@@ -1,0 +1,64 @@
+# Detect Manual Blind Control
+#
+# The single most important automation in this repo — see
+# docs/architecture.md for the full "why" behind it.
+#
+# Short version: when a cover's position changes, we need to know whether a
+# human just moved it, or whether it was this repo's own auto-close/reopen
+# automation. Home Assistant's context id on the state-changed event is NOT
+# reliable for this, because the cover integration reports its own "final
+# position reached" event asynchronously, disconnected from the context of
+# whatever service call originally triggered the move. So instead: every
+# automation that moves a cover on purpose writes its own action's
+# timestamp into that cover's `last_auto_action_helper` (see
+# sun-based-auto-close.yaml / away-mode-full-close.yaml). This automation
+# then compares "when did the position actually change" against "when did
+# our own automation last act on this cover" — if that gap is bigger than a
+# short debounce window, or there's no record of the automation having
+# acted on it today at all, it must have been a human, and we set that
+# cover's override_helper so today's automation runs leave it alone.
+#
+# NOTE ON THE TRIGGER LIST BELOW: Home Assistant triggers can't be
+# templated — the entity_id list has to be literal. So unlike the
+# *condition/action* logic elsewhere in this repo (which discovers covers
+# dynamically via `selectattr('attributes.azimuth', 'defined')`), this
+# trigger's entity_id list has to be kept manually in sync with
+# examples/customize.yaml when you add or remove a cover.
+
+alias: "Detect Manual Blind Control"
+description: >-
+  Tells a real manual cover adjustment apart from this repo's own automated
+  moves, and sets that cover's override flag so today's automation runs
+  skip it.
+triggers:
+  - trigger: state
+    entity_id:
+      - cover.living_room
+      - cover.bedroom
+      - cover.office
+    attribute: current_position
+variables:
+  debounce_seconds: 120
+conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.attributes.current_position is not none }}"
+actions:
+  - variables:
+      last_auto_action_helper: "{{ state_attr(trigger.entity_id, 'last_auto_action_helper') }}"
+      override_helper: "{{ state_attr(trigger.entity_id, 'override_helper') }}"
+      last_auto_action_ts: "{{ states(last_auto_action_helper) | float(0) }}"
+      seconds_since_last_auto_action: "{{ now().timestamp() - last_auto_action_ts }}"
+      # Belt-and-suspenders: even if the gap happens to be small, a
+      # last-auto-action timestamp from a previous day can never explain a
+      # change happening today, so treat that case as manual too.
+      last_auto_action_was_today: >-
+        {{ last_auto_action_ts > 0
+           and (as_datetime(last_auto_action_ts) | as_local).date() == now().date() }}
+  - condition: template
+    value_template: >-
+      {{ seconds_since_last_auto_action > debounce_seconds
+         or not last_auto_action_was_today }}
+  - action: input_boolean.turn_on
+    target:
+      entity_id: "{{ override_helper }}"
+mode: queued

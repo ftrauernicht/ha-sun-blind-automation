@@ -1,0 +1,57 @@
+# Away-Mode Full Blind Close
+#
+# Disabled by default — this is an optional, more aggressive variant of
+# sun-based-auto-close.yaml. Instead of a per-cover partial target position,
+# it closes every eligible cover fully whenever nobody is home and it's hot,
+# on the theory that nobody's around to care about partial daylight anyway.
+# Still respects each cover's override_helper.
+#
+# Enable it by removing the top-level `enabled: false` key (or flipping it
+# to `true`) once you've decided you want this behavior.
+
+alias: "Away-Mode Full Blind Close"
+description: >-
+  While nobody is home and it's hot outside, fully closes every cover that
+  carries an azimuth attribute, unless it was manually overridden today.
+enabled: false
+triggers:
+  - trigger: time_pattern
+    minutes: "/10"
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.outside_temperature
+    above: 24
+  - condition: template
+    # Generic occupancy check — no named individuals. `zone.home`'s
+    # `persons` attribute lists the person entity_ids currently in that
+    # zone; this is true whenever that list is empty.
+    value_template: >-
+      {{ states.zone.home.attributes.persons | default([]) | length == 0 }}
+actions:
+  - repeat:
+      for_each: >-
+        {{ states.cover
+           | selectattr('attributes.azimuth', 'defined')
+           | map(attribute='entity_id')
+           | list }}
+      sequence:
+        - variables:
+            override_helper: "{{ state_attr(repeat.item, 'override_helper') }}"
+            auto_closed_helper: "{{ state_attr(repeat.item, 'auto_closed_helper') }}"
+            last_auto_action_helper: "{{ state_attr(repeat.item, 'last_auto_action_helper') }}"
+        - condition: template
+          value_template: "{{ states(override_helper) != 'on' }}"
+        - action: cover.set_cover_position
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            position: 0
+        - action: input_boolean.turn_on
+          target:
+            entity_id: "{{ auto_closed_helper }}"
+        - action: input_number.set_value
+          target:
+            entity_id: "{{ last_auto_action_helper }}"
+          data:
+            value: "{{ now().timestamp() }}"
+mode: single

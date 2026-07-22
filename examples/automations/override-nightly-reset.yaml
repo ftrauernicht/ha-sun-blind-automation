@@ -1,0 +1,30 @@
+# Nightly Override Reset
+#
+# Every midnight, turns off every cover's override_helper so tomorrow's
+# sun-based-auto-close automation is free to act on it again. Discovers
+# which covers have an override helper the same way every other automation
+# in this repo discovers covers — by filtering `states.cover` for an
+# `azimuth` attribute — so adding or removing a cover never requires
+# touching this file.
+
+alias: "Nightly Blind Override Reset"
+description: >-
+  Resets every cover's manual-override flag back off at midnight, so the
+  sun-based automation can act on all of them again the next day.
+triggers:
+  - trigger: time
+    at: "00:00:00"
+actions:
+  - repeat:
+      for_each: >-
+        {{ states.cover
+           | selectattr('attributes.azimuth', 'defined')
+           | map(attribute='entity_id')
+           | list }}
+      sequence:
+        - variables:
+            override_helper: "{{ state_attr(repeat.item, 'override_helper') }}"
+        - action: input_boolean.turn_off
+          target:
+            entity_id: "{{ override_helper }}"
+mode: single

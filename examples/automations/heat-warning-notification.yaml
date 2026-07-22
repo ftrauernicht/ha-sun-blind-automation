@@ -1,0 +1,45 @@
+# Heat Warning: Sun-Exposed Windows
+#
+# A standalone, notification-only sibling of sun-based-auto-close.yaml: it
+# reuses the exact same azimuth-diff calculation to tell you, in plain
+# language, which specific windows/facades are getting direct sun right
+# now — useful even without adopting the full auto-close automation, and a
+# good "am I actually right that this cover faces the sun" sanity check
+# while setting up examples/customize.yaml.
+
+alias: "Heat Warning: Sun-Exposed Windows"
+description: >-
+  Notifies which covers are currently sun-exposed whenever it's hot outside
+  and someone is home to do something about it.
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.outside_temperature
+    above: 24
+conditions:
+  - condition: template
+    # Generic occupancy check — no named individuals, just "is anyone home".
+    value_template: >-
+      {{ states.zone.home.attributes.persons | default([]) | length > 0 }}
+actions:
+  - variables:
+      sun_azimuth: "{{ state_attr('sun.sun', 'azimuth') }}"
+      sun_facing_window_degrees: 90
+      exposed_covers: >-
+        {% set ns = namespace(items=[]) %}
+        {% for c in states.cover | selectattr('attributes.azimuth', 'defined') | list %}
+          {% set angle_diff = ((sun_azimuth - c.attributes.azimuth + 180) % 360) - 180 %}
+          {% if state_attr('sun.sun', 'elevation') | float(0) > 0
+                and angle_diff | abs <= sun_facing_window_degrees %}
+            {% set ns.items = ns.items + [c.attributes.friendly_direction | default(c.name)] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.items }}
+  - condition: template
+    value_template: "{{ exposed_covers | length > 0 }}"
+  - action: notify.notify
+    data:
+      title: "Heat warning"
+      message: >-
+        It's hot outside and the sun is currently hitting: {{ exposed_covers | join(', ') }}.
+        Consider closing those blinds.
+mode: single

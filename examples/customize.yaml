@@ -1,0 +1,44 @@
+# Per-cover metadata that the automations in examples/automations/ discover
+# dynamically at runtime. No automation in this repo ever hardcodes a list
+# of covers — it always filters `states.cover` for entities carrying an
+# `azimuth` attribute. Add a cover here (with its three helpers) and every
+# automation picks it up automatically; leave a cover out and it's silently
+# ignored by all of them — that's the mechanism for excluding a cover
+# entirely.
+#
+# Fields:
+#   azimuth               - compass degrees (0-359) the window/facade faces
+#   friendly_direction     - human-readable compass direction, for messages
+#   override_helper        - input_boolean: "a human touched this today, skip it"
+#   last_auto_action_helper - input_number: unix timestamp of this automation's
+#                             own last move (see docs/architecture.md for why)
+#   auto_closed_helper     - input_boolean: "the automation closed this for
+#                             heat protection, so it may auto-reopen later"
+
+homeassistant:
+  customize:
+    cover.living_room:
+      azimuth: 180
+      friendly_direction: "South"
+      override_helper: input_boolean.living_room_cover_override
+      last_auto_action_helper: input_number.living_room_cover_last_auto_action
+      auto_closed_helper: input_boolean.living_room_cover_auto_closed
+
+    cover.bedroom:
+      azimuth: 90
+      friendly_direction: "East"
+      override_helper: input_boolean.bedroom_cover_override
+      last_auto_action_helper: input_number.bedroom_cover_last_auto_action
+      auto_closed_helper: input_boolean.bedroom_cover_auto_closed
+
+    cover.office:
+      azimuth: 225
+      friendly_direction: "South-West"
+      override_helper: input_boolean.office_cover_override
+      last_auto_action_helper: input_number.office_cover_last_auto_action
+      auto_closed_helper: input_boolean.office_cover_auto_closed
+
+    # A cover with no `azimuth` attribute (e.g. cover.garage) is invisible to
+    # every automation in this repo. That's intentional: it's how you exclude
+    # a cover you don't want touched by any of this, without maintaining a
+    # separate exclusion list anywhere.
