@@ -7,7 +7,7 @@ Guidance for Claude Code (or any AI coding agent) working in this repository.
 A reference implementation/template for a sun-aware Home Assistant blind
 automation system, meant for other Home Assistant users to adapt to their
 own home. Nothing here is live-polled by anything — unlike some other
-`hassio-*` repos, this one is pure documentation/example YAML, not a data
+`ha-*` repos, this one is pure documentation/example YAML, not a data
 source any running Home Assistant instance pulls from at runtime.
 
 ## Hard rules

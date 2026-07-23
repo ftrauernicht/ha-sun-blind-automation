@@ -1,4 +1,4 @@
-# hassio-sun-blind-automation
+# ha-sun-blind-automation
 
 A sun-aware, self-correcting Home Assistant blind/cover automation system:
 it closes covers when the sun is actually hitting that facade and it's hot,
@@ -50,7 +50,7 @@ The complete example YAML lives under [`examples/`](examples/).
 ## Related
 
 See also the `sun-exposed-windows-notification` pattern in
-[hassio-automation-cookbook](https://github.com/ftrauernicht/hassio-automation-cookbook)
+[ha-automation-cookbook](https://github.com/ftrauernicht/ha-automation-cookbook)
 for a standalone version of the notification half of this system, without
 the full blind-control automation.
 
@@ -65,6 +65,6 @@ for everyone including the maintainer. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-Part of the `hassio-*` Home Assistant toolkit — see also
-[hassio-dashboard-recipes](https://github.com/ftrauernicht/hassio-dashboard-recipes)
-and [hassio-zone-time-stats](https://github.com/ftrauernicht/hassio-zone-time-stats).
+Part of the `ha-*` Home Assistant toolkit — see also
+[ha-dashboard-recipes](https://github.com/ftrauernicht/ha-dashboard-recipes)
+and [ha-zone-time-stats](https://github.com/ftrauernicht/ha-zone-time-stats).
