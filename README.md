@@ -1,5 +1,9 @@
 # ha-sun-blind-automation
 
+[![Validate](https://github.com/ftrauernicht/ha-sun-blind-automation/actions/workflows/validate.yml/badge.svg)](https://github.com/ftrauernicht/ha-sun-blind-automation/actions/workflows/validate.yml)
+[![Link Check](https://github.com/ftrauernicht/ha-sun-blind-automation/actions/workflows/link-check.yml/badge.svg)](https://github.com/ftrauernicht/ha-sun-blind-automation/actions/workflows/link-check.yml)
+[![License: MIT](https://img.shields.io/github/license/ftrauernicht/ha-sun-blind-automation)](LICENSE)
+
 A sun-aware, self-correcting Home Assistant blind/cover automation system:
 it closes covers when the sun is actually hitting that facade and it's hot,
 reliably tells its own moves apart from a real manual adjustment (despite
