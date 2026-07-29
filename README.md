@@ -35,6 +35,25 @@ exclude it entirely. (There's one honest exception, explained in the setup
 guide: Home Assistant triggers can't be templated, so the manual-override
 detector's trigger needs a literal entity list.)
 
+```
+              customize: azimuth + 3 helper entities per cover
+                                     |
+                                     v
+                          dynamic cover discovery
+             (states.cover | selectattr('azimuth', 'defined'))
+                                     |
+       +---------------+--------------+------------+---------------+
+       |               |              |            |               |
++------------+  +------------+  +----------+  +---------+  +--------------+
+| sun-based  |  | away-mode  |  | manual-  |  | nightly |  | heat-warning |
+| auto-close |  |  variant   |  | override |  |  reset  |  | notification |
+|            |  | (optional) |  |  detect  |  |         |  |              |
++------------+  +------------+  +----------+  +---------+  +--------------+
+
+        manual-override detect compares the event timestamp against
+        the cover's last_auto_action_helper (not the event context)
+```
+
 The trickiest part of the whole system is telling the automation's own
 cover moves apart from a real manual adjustment — the cover integration's
 event context isn't reliable enough for this, because the "final position
