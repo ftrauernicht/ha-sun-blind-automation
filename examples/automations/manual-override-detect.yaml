@@ -38,6 +38,16 @@ triggers:
       - cover.office
     attribute: current_position
 variables:
+  # 120s is a conservative starting point, not a universal default: it needs
+  # to comfortably outlast your cover's own open/close travel time (so its
+  # tail-end "final position reached" event doesn't get misread as manual),
+  # but every second beyond that is a window in which a *genuine* quick
+  # manual correction right after an automated move gets silently swallowed
+  # instead of setting the override flag. Time your own cover's full
+  # open<->close traversal and set this a little above that — many
+  # modern motorized roller shutters complete in well under 30s, in which
+  # case 120s is needlessly wide. See docs/architecture.md for the full
+  # trade-off.
   debounce_seconds: 120
 conditions:
   - condition: template

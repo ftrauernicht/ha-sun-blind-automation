@@ -61,6 +61,18 @@ accurately regardless of how its context id was assigned.
   adjustment right after an automated move gets missed. 2 minutes is a
   reasonable default for typical motorized blinds; widen it if your covers
   are slow, or your integration's polling interval is long.
+
+  In practice this second failure mode is easy to hit and easy to miss:
+  a real-world deployment with fast-closing Shelly-relay roller shutters
+  (full traversal under ~15s) saw two separate quick manual corrections,
+  made 39 and 46 seconds after an automated close, both silently ignored
+  under the 120s default — the override flag never got set, and the
+  sun-based automation re-closed the cover again on its next run. Only a
+  third correction, made over 20 minutes later, fell outside the window
+  and registered. Lowering `debounce_seconds` to 30 (still comfortably
+  above that cover's travel time) fixed it. If your covers move quickly,
+  don't assume the 120s default is "safe because it's generous" — measure
+  your own cover's travel time and size the window to that instead.
 - This approach assumes only this repo's automations, or a human, ever
   move these covers — if you have a third system (e.g. another automation,
   a scene, a different integration) also moving them, it needs to write to
