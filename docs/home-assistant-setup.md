@@ -147,3 +147,22 @@ you're setting this up.
   seems to be treating its own action's tail end as a manual override, or
   too long if it's missing genuine quick manual adjustments right after an
   automated move.
+
+  To tell which direction you're dealing with, check your Home Assistant
+  history for the cover entity and its `last_auto_action_helper`
+  (`input_number`) around the time of the problem:
+  - If a manual adjustment happened *shortly after* an automated move and
+    the override flag never turned on, the gap was inside the debounce
+    window and got misread as the automation's own tail end — **lower**
+    `debounce_seconds` toward (but a bit above) your cover's actual
+    open/close travel time.
+  - If the override flag turns on right after the automation itself moves
+    the cover (with no human involved), the debounce window is shorter
+    than your cover needs — **raise** it.
+
+  As a starting point: many modern motorized roller shutters (e.g. Shelly-
+  based relays) complete a full open/close traversal in well under 30
+  seconds, in which case the 120s default is far more generous than
+  needed and mainly serves to swallow real quick manual corrections. A
+  debounce window of roughly your cover's travel time plus a few seconds
+  of margin is usually enough.
